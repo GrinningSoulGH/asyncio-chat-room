@@ -10,38 +10,49 @@ async def get_message_log(reader):
         else:
             print(message)
 
+async def send(writer, data):
+    writer.write(data.encode())
+    await writer.drain()
 
+async def register_user(writer, username):
+    print('Username is available')
+    print('Set your password (max 255 characters):')
+    password = input()
+    await send(writer, password)
+
+async def check_user_password(writer,reader, username):
+    while True:
+        print('Input your password:')
+        password = input()
+        await send(writer, password)
+        code = await reader.read(1)
+        if reader.at_eof():
+            return False
+        if code.decode() == '1': # Пароль верный
+            return True
+        print('Incorrect password')
 
 async def login(writer, reader):
     while True:
         print('Enter your username(max 20 characters, no spaces):')
         username = input()
         if len(username) < 20 and len(username.split()) == 1:
-            writer.write(username.encode())
-            await writer.drain()
+            await send(writer, username)
             code = (await reader.read(1)).decode()
             if reader.at_eof():
                 return False
             if code == '1': # Новый пользователь
-                print('Username is available')
-                print('Set your password (max 255 characters):')
-                password = input()
-                writer.write(password.encode())
-                await writer.drain()
+                await register_user(writer, username)
                 return username
-            elif code == '2': # Существующий пользователь
-                while True:
-                    print('Input your password:')
-                    password = input()
-                    writer.write(password.encode())
-                    await writer.drain()
-                    code = await reader.read(1)
-                    if reader.at_eof():
-                        return False
-                    if code.decode() == '1': # Пароль верный
-                        return username
-                    print('Incorrect password')
-        print('Incorrect username')
+            elif code == '2': # Пользователь уже онлайн
+                print('This user has already logged in')
+            elif code == '3': # Существующий пользователь
+                if await check_user_password(writer, reader, username):
+                    return username
+                else:
+                    return False
+        else:    
+            print('Incorrect username')
 
 async def _message(writer, reader):
     while True:
@@ -52,8 +63,7 @@ async def _message(writer, reader):
             print('You can not send an empty message')
         else:
             date = str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-            writer.write((date + ' ' + data).encode())
-            await writer.drain()
+            await send(writer, date + ' ' + data)
             if data[:2] == '/w':
                 print(f"[{date}]You (to {data.split()[1]}): {data.split(maxsplit = 2)[2]}")
             else:
