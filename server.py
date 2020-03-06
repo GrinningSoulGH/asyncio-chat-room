@@ -1,6 +1,4 @@
-import asyncio
-import sys
-import datetime
+import asyncio, sys, datetime
 from chat_utils.chatdatabase import ChatDatabase
 from chat_utils.chatroom import ChatRoom
 from chat_utils.chatroom import User

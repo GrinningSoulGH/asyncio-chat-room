@@ -1,5 +1,4 @@
 import aiosqlite
-import asyncio
 
 class ChatDatabase:
     

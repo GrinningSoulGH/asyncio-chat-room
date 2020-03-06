@@ -1,4 +1,3 @@
-import asyncio
 from chat_utils.chatdatabase import ChatDatabase
 
 class User:
